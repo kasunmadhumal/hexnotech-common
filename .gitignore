@@ -1,0 +1,19 @@
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.classpath
+.project
+.settings/
+*.class
+
+# Maven local publish artifacts (not tracked)
+# OS
+.DS_Store
+Thumbs.db
