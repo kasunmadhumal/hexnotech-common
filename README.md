@@ -1,145 +1,122 @@
-# hexnotech-commons
+# Hexnotech Commons
 
-Shared library of **annotations**, **base classes**, **response wrappers**, **exception handling**, and **utility functions** for all Hexnotech backend services.
+A shared library providing annotations, utilities, base classes, exception handlers, and infrastructure components for all Hexnotech backend services.
 
----
+## Overview
+
+Hexnotech Commons is a foundational library that provides reusable components to standardize and streamline development across all Hexnotech microservices. It includes:
+
+- **JPA & Database Utilities** - Base entities, custom type handlers, and query helpers
+- **Exception Handling** - Centralized exception management and custom exception classes
+- **Feature Flags** - Feature flag management and evaluation
+- **Monitoring & Job Management** - Job execution, monitoring, and async process handling
+- **Security** - Security utilities and carrier-level security handling
+- **Type System** - Common data types and type conversions
+- **Controllers & Services** - Base controller and service classes
+- **Logging** - Custom logging utilities
 
 ## Quick Start
 
-### 1. Publish to your local Maven repo
+### Installation
 
-```bash
-cd hexnotech-commons
-./gradlew publishToMavenLocal
-```
+Add this library as a dependency in your `build.gradle`:
 
-### 2. Add to any Hexnotech project
-
-In the consumer project's `build.gradle`:
-
-```groovy
-repositories {
-    mavenLocal()        // ← add this before mavenCentral
-    mavenCentral()
-}
-
+```gradle
 dependencies {
     implementation 'com.hexnotech:hexnotech-commons:1.0.0'
 }
 ```
 
----
-
-## What's Inside
-
-### Annotations
-
-| Annotation | Package | Purpose |
-|---|---|---|
-| `@Auditable` | `annotation.audit` | Marks a JPA entity for audit tracking (works with `BaseEntity`) |
-| `@PhoneNumber` | `annotation.validation` | Validates international phone number format |
-| `@NationalId` | `annotation.validation` | Validates Bangladeshi NID (10 / 13 / 17 digits) |
-| `@ApiVersion` | `annotation.web` | Documents API version on controllers / methods |
-
-### Base Classes
-
-| Class | Purpose |
-|---|---|
-| `BaseEntity` | Abstract `@MappedSuperclass` with `id`, `createdAt`, `updatedAt` via JPA lifecycle |
-| `BaseService<T,ID>` | Generic CRUD service interface |
-
-### Response Wrappers
-
-| Class | Purpose |
-|---|---|
-| `ApiResponse<T>` | Standard `{ success, message, data, timestamp }` envelope |
-| `PagedResponse<T>` | Wraps Spring Data `Page<T>` for paginated list endpoints |
-
-### Exception Handling
-
-| Class | HTTP Status | Purpose |
-|---|---|---|
-| `ResourceNotFoundException` | 404 | Resource not found by ID |
-| `BusinessException` | 422 | Business rule / domain invariant violated |
-| `BaseException` | 400 | Abstract base — extend for custom exceptions |
-| `GlobalExceptionHandler` | — | `@RestControllerAdvice` — handles all of the above + validation |
-
-### Utilities
-
-| Class | Key Methods |
-|---|---|
-| `DateTimeUtils` | `nowDhaka()`, `utcToDhaka()`, `toDisplayString()`, `startOfDay()`, `endOfDay()` |
-| `StringUtils` | `isBlank()`, `mask()`, `toSlug()`, `toCamelCase()`, `truncate()` |
-| `PaginationUtils` | `of(page, size, sortBy, direction)`, `ofDefault(page)` |
-| `JsonUtils` | `toJson()`, `fromJson()`, `toMap()`, `convert()` |
-
----
-
-## Usage Examples
-
-### Extend BaseEntity
+### Basic Usage
 
 ```java
-@Auditable
+// Use base entity classes
 @Entity
-@Table(name = "bookings")
-public class Booking extends BaseEntity {
-    private String reference;
+public class MyEntity extends BaseEntity {
+    // Your properties
+}
+
+// Use custom exceptions
+throw new BusinessException("Error message");
+
+// Use feature flags
+@FeatureFlag("my-feature")
+public void myFeature() {
+    // Feature-flagged code
 }
 ```
 
-### Use ApiResponse in a controller
+## Documentation
 
-```java
-@GetMapping("/{id}")
-public ResponseEntity<ApiResponse<BookingDto>> get(@PathVariable Long id) {
-    BookingDto dto = bookingService.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Booking", id));
-    return ResponseEntity.ok(ApiResponse.success(dto));
-}
+- [Getting Started](docs/GETTING_STARTED.md) - Setup and initial configuration
+- [Build & Publish](docs/BUILD_AND_PUBLISH.md) - Build, test, and publishing commands
+- [Modules Overview](docs/MODULES.md) - Detailed module descriptions
+- [Usage Examples](docs/USAGE_EXAMPLES.md) - Code examples for common tasks
+
+## Project Structure
+
+```
+hexnotech-common/
+├── src/main/java/com/hexnotech/commons/
+│   ├── constants/          # Constants and enums
+│   ├── controller/         # Base controller classes
+│   ├── exception/          # Custom exceptions
+│   ├── ff/                 # Feature flag implementation
+│   ├── jpa/                # JPA entities and utilities
+│   ├── monitoring/         # Job monitoring and execution
+│   ├── security/           # Security utilities
+│   ├── service/            # Base service classes
+│   ├── type/               # Custom types and converters
+│   └── util/               # General utilities
+├── docs/                   # Documentation files
+└── build.gradle            # Gradle build configuration
 ```
 
-### Paginated list
+## Requirements
 
-```java
-@GetMapping
-public ResponseEntity<ApiResponse<PagedResponse<BookingDto>>> list(
-        @RequestParam(defaultValue = "0")  int page,
-        @RequestParam(defaultValue = "20") int size) {
+- **Java 21+**
+- **Gradle 7.0+**
+- **Spring Boot 3.4.5+**
 
-    Pageable pageable = PaginationUtils.of(page, size, "createdAt", Sort.Direction.DESC);
-    Page<BookingDto> result = bookingService.findAll(pageable);
-    return ResponseEntity.ok(ApiResponse.success(PagedResponse.of(result)));
-}
-```
-
-### Import GlobalExceptionHandler
-
-In your Spring Boot app, if `com.hexnotech.commons` is **not** under your base package, import explicitly:
-
-```java
-@SpringBootApplication
-@Import(GlobalExceptionHandler.class)
-public class AnyBookingApplication { ... }
-```
-
----
-
-## Publishing to GitHub Packages (future)
-
-Uncomment the `GitHubPackages` block in `build.gradle` and set:
+## Building
 
 ```bash
-export GITHUB_ACTOR=your-username
-export GITHUB_TOKEN=your-pat-token
-./gradlew publish
+# Build the library
+gradle build
+
+# Build with tests
+gradle test build
+
+# Generate documentation
+gradle javadoc
 ```
 
----
+## Publishing
 
-## Tech Stack
+The library is configured to publish to Maven local and GitHub Packages:
 
-- Java 21
-- Gradle 9.5.1 (`java-library` + `maven-publish`)
-- Spring Web MVC, Spring Data Commons, Jakarta Persistence, Jakarta Validation
-- Jackson (with JavaTimeModule), Lombok
+```bash
+# Publish to local Maven repository
+gradle publish
+```
+
+For GitHub Packages publishing, set environment variables:
+```bash
+export GITHUB_ACTOR=<your-username>
+export GITHUB_TOKEN=<your-token>
+gradle publish
+```
+
+## Contributing
+
+See [Contributing Guide](docs/CONTRIBUTING.md) for development guidelines.
+
+## License
+
+Proprietary - Hexnotech
+
+## Version
+
+Current version: **1.0.0**
+
+For detailed changes, see [CHANGELOG](docs/CHANGELOG.md).
